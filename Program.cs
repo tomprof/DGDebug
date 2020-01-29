@@ -15,9 +15,9 @@ namespace MyApp
         [STAThread]
         static async Task Main()
         {
-            using (var mgr = new UpdateManager("C:\\VSProject\\MyApp\\Releases"))
+            using (var mgr = UpdateManager.GitHubUpdateManager("https://github.com/tomprof/Diagnoser"))
             {
-                await mgr.UpdateApp();
+                await mgr.Result.UpdateApp();
             }
             Application.EnableVisualStyles();
             Application.SetCompatibleTextRenderingDefault(false);

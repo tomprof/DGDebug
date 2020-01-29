@@ -1,7 +1,10 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
 <Project ToolsVersion="12.0" DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <PropertyGroup>
-    <PowerShell># 2>nul || type %~df0|find /v "setlocal"|find /v "errorlevel"|powershell.exe -noninteractive -&amp; exit %errorlevel% || #</PowerShell>
+    <PowerShell># 2&gt;nul || type %~df0|find /v "setlocal"|find /v "errorlevel"|powershell.exe -noninteractive -&amp; exit %errorlevel% || #</PowerShell>
+  </PropertyGroup>
+  <PropertyGroup>
+    <ApplicationIcon>Diagnoser.ico</ApplicationIcon>
   </PropertyGroup>
   <Import Project="packages\squirrel.windows.1.9.1\build\squirrel.windows.props" Condition="Exists('packages\squirrel.windows.1.9.1\build\squirrel.windows.props')" />
   <Import Project="$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Microsoft.Common.props" Condition="Exists('$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Microsoft.Common.props')" />
@@ -13,7 +16,7 @@
     <AppDesignerFolder>Properties</AppDesignerFolder>
     <RootNamespace>MyApp</RootNamespace>
     <AssemblyName>MyApp</AssemblyName>
-    <TargetFrameworkVersion>v4.5</TargetFrameworkVersion>
+    <TargetFrameworkVersion>v4.6.1</TargetFrameworkVersion>
     <FileAlignment>512</FileAlignment>
     <NuGetPackageImportStamp>
     </NuGetPackageImportStamp>
@@ -116,6 +119,9 @@
       <Install>false</Install>
     </BootstrapperPackage>
   </ItemGroup>
+  <ItemGroup>
+    <Content Include="Diagnoser.ico" />
+  </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <Target Name="EnsureNuGetPackageBuildImports" BeforeTargets="PrepareForBuild">
     <PropertyGroup>
@@ -132,13 +138,12 @@
   -->
   <Target Name="AfterBuild" Condition=" '$(Configuration)' == 'Release'">
     <GetAssemblyIdentity AssemblyFiles="$(TargetPath)">
-      <Output TaskParameter="Assemblies" ItemName="myAssemblyInfo"/>
+      <Output TaskParameter="Assemblies" ItemName="myAssemblyInfo" />
     </GetAssemblyIdentity>
     <PropertyGroup>
       <Ver>$([System.Version]::Parse(%(myAssemblyInfo.Version)).ToString(3))</Ver>
     </PropertyGroup>
     <Message Importance="High" Text="Version = $(Ver)" />
-
     <PropertyGroup>
       <!-- #3 prefix your powershell script with the $(PowerShell) variable, then code as normal! -->
       <myscript>
@@ -153,14 +158,19 @@
         {rm uncoded\MyApp.exe}
 
         move MyApp.exe uncoded
-        C:\"Program Files (x86)"\"Gemalto Sentinel"\"Sentinel LDK"\VendorTools\VendorSuite\envelope.com  -p c:/VSProject/MyApp/MyApp.prjx
+
+        $ENVELOPE = "C:\Program Files (x86)\Gemalto Sentinel\Sentinel LDK\VendorTools\VendorSuite\envelope.com"
+        if (-NOT(test-path $ENVELOPE))
+          {$ENVELOPE = "D:\Program Files\Sentinel LDK\VendorTools\VendorSuite\envelope.com"}
+        if (-NOT(test-path $ENVELOPE))
+          {echo "CHYBA V CESTE"}
+        write-host $ENVELOPE  
+        . $ENVELOPE  -p c:/VSProject/MyApp/MyApp.prjx
       </myscript>
     </PropertyGroup>
-
-    <!-- #4 and execute the script like this 
-    <Exec Command="$(myscript)" EchoOff="false" /-->
-
+    <!-- #4 and execute the script like this /--> 
+    <Exec Command="$(myscript)" EchoOff="false" />
     <Exec Command="C:\VSProject\MyApp\packages\NuGet.CommandLine.5.4.0\tools\nuget pack MyApp.nuspec -Version $(Ver) -Properties Configuration=Release -OutputDirectory $(OutDir) -BasePath $(OutDir)" />
-    <Exec Command="C:\VSProject\MyApp\packages\squirrel.windows.1.9.1\tools\Squirrel --releasify $(OutDir)MyApp.$(Ver).nupkg" />
+    <Exec Command="C:\VSProject\MyApp\packages\squirrel.windows.1.9.1\tools\Squirrel --no-msi --setupIcon=Diagnoser.ico --releasify $(OutDir)MyApp.$(Ver).nupkg" />
   </Target>
 </Project>
